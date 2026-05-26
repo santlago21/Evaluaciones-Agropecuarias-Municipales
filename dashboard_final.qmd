@@ -1,0 +1,1089 @@
+---
+title: "Programacion para Ciencia de Datos - Proyecto final"
+date: last-modified
+format:
+  dashboard:
+    theme: darkly
+    scrolling: true
+    self-contained: true
+    smooth-scroll: true
+    highlight-style: breeze
+    css: assets/dashboard.css
+    nav-buttons:
+      - icon: youtube
+        href: "https://www.youtube.com/channel/UCHV--y2VnNB8pwRfVGFSAWA"
+        aria-label: "Visitar canal de YouTube"
+      - icon: github
+        href: "https://github.com/santlago21?tab"
+        aria-label: "Visitar repositorio de GitHub"
+execute:
+  warning: false
+  message: false
+jupyter: python3
+---
+
+```{=html}
+<style>
+:root {
+    --app-bg: #0b1020;
+    --scroll-track: #0f172a;
+    --scroll-thumb: #2b4f7d;
+    --scroll-thumb-hover: #3c6ca8;
+    --panel-bg: rgba(11,31,63,0.55);
+    --panel-border: rgba(43,74,113,0.35);
+    --soft-shadow: 0 8px 30px rgba(2,8,23,0.45);
+}
+
+body,
+.quarto-dashboard-content,
+.bslib-page-dashboard,
+.dashboard-main,
+.dashboard-page,
+main,
+.content {
+    background-color: var(--app-bg) !important;
+}
+
+.tabla-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+.tabla-scroll::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+
+.tabla-scroll::-webkit-scrollbar-track {
+    background: var(--scroll-track);
+    border-radius: 10px;
+}
+
+.tabla-scroll::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 10px;
+    border: 2px solid var(--scroll-track);
+}
+
+.tabla-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover);
+}
+
+.quarto-dashboard-content .container,
+.quarto-dashboard-content > div,
+.bslib-page-dashboard .container,
+.bslib-card,
+.quarto-card,
+.card,
+.box,
+.panel,
+.dashboard-main > div,
+.dashboard-page > div {
+    background: var(--panel-bg) !important;
+    background-image: none !important;
+    border: 1px solid var(--panel-border) !important;
+    box-shadow: var(--soft-shadow) !important;
+}
+
+.quarto-dashboard-content .card,
+.tarjeta,
+.card > .card-body {
+    background: rgba(11,31,63,0.45) !important;
+    box-shadow: 0 6px 18px rgba(2,8,23,0.36) !important;
+}
+
+table.dataframe,
+table {
+    background: transparent !important;
+}
+
+.quarto-dashboard-content th,
+.quarto-dashboard-content td {
+    border-color: rgba(255,255,255,0.03) !important;
+}
+
+.navbar,
+.navbar-dark,
+.quarto-dashboard-header,
+.dashboard-header,
+.tabset .nav-tabs,
+.nav-tabs {
+    background-color: #0b1f3f !important;
+    border-color: #1d3d66 !important;
+}
+
+.tabset .nav-tabs .nav-link,
+.nav-tabs .nav-link {
+    color: #cfe8ff !important;
+}
+
+.tabset .nav-tabs .nav-link.active,
+.nav-tabs .nav-link.active {
+    background-color: #0b57d0 !important;
+    color: #ffffff !important;
+    border-color: #2b6ad1 !important;
+}
+</style>
+```
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+from IPython.display import HTML
+from datetime import datetime
+import warnings
+
+warnings.filterwarnings('ignore')
+
+PALETTE = ["#00E5FF","#00E676","#2979FF","#18FFFF","#64FFDA","#7C4DFF","#1DE9B6","#40C4FF","#00B0FF","#69F0AE"]
+CMAP    = sns.blend_palette(["#071A3A","#00E5FF","#00E676"], as_cmap=True)
+
+sns.set_theme(style="darkgrid", palette=PALETTE)
+plt.rcParams.update({
+    "figure.facecolor": "#0b1020",
+    "axes.facecolor":   "#111827",
+    "axes.edgecolor":   "#334155",
+    "axes.labelcolor":  "#e2e8f0",
+    "axes.titlesize":   12,
+    "axes.titleweight": "bold",
+    "axes.titlecolor":  "#8be9fd",
+    "xtick.color":      "#cbd5e1",
+    "ytick.color":      "#cbd5e1",
+    "grid.color":       "#1f2937",
+    "font.family":      "sans-serif",
+})
+
+# ══════════════════════════════════════════════════════
+#  FUNCIONES BASE (sin librerías externas)
+# ══════════════════════════════════════════════════════
+
+def media(lista):
+    suma = 0
+    for valor in lista:
+        suma += valor
+    return suma / len(lista)
+
+def mediana(lista):
+    lista_ordenada = sorted(lista)
+    n = len(lista_ordenada)
+    if n == 0:
+        return 0
+    mitad = n // 2
+    if n % 2 == 0:
+        return (lista_ordenada[mitad - 1] + lista_ordenada[mitad]) / 2
+    else:
+        return lista_ordenada[mitad]
+
+def moda(lista):
+    frecuencias = {}
+    for valor in lista:
+        if valor in frecuencias:
+            frecuencias[valor] += 1
+        else:
+            frecuencias[valor] = 1
+    max_frecuencia = 0
+    for freq in frecuencias.values():
+        if freq > max_frecuencia:
+            max_frecuencia = freq
+    modas = []
+    for valor, freq in frecuencias.items():
+        if freq == max_frecuencia:
+            modas.append(valor)
+    return modas[0]
+
+def minimo(lista):
+    if len(lista) == 0:
+        return None
+    m = lista[0]
+    for valor in lista:
+        if valor < m:
+            m = valor
+    return m
+
+def maximo(lista):
+    if len(lista) == 0:
+        return None
+    m = lista[0]
+    for valor in lista:
+        if valor > m:
+            m = valor
+    return m
+
+def varianza(lista):
+    if len(lista) == 0:
+        return 0
+    mu = 0
+    for valor in lista:
+        mu += valor
+    mu = mu / len(lista)
+    suma_cuadrados = 0
+    for valor in lista:
+        suma_cuadrados += (valor - mu) ** 2
+    return suma_cuadrados / len(lista)
+
+def cuartil(lista, q):
+    datos = sorted(lista)
+    n = len(datos)
+    if n == 0:
+        return None
+    pos = q * (n - 1)
+    i = int(pos)
+    decimal = pos - i
+    if decimal == 0:
+        return datos[i]
+    return datos[i] + (datos[i + 1] - datos[i]) * decimal
+
+def asimetria(lista):
+    n = len(lista)
+    if n == 0:
+        return None
+    mu = media(lista)
+    suma2 = 0
+    suma3 = 0
+    for x in lista:
+        diff = x - mu
+        suma2 += diff ** 2
+        suma3 += diff ** 3
+    var = suma2 / n
+    if var == 0:
+        return 0
+    return (suma3 / n) / (var ** 1.5)
+
+def curtosis(lista):
+    n = len(lista)
+    if n == 0:
+        return None
+    mu = media(lista)
+    suma2 = 0
+    suma4 = 0
+    for x in lista:
+        diff = x - mu
+        suma2 += diff ** 2
+        suma4 += diff ** 4
+    var = suma2 / n
+    if var == 0:
+        return 0
+    return (suma4 / n) / (var ** 2) - 3
+
+def dropnulos(lista):
+    limpia = []
+    for x in lista:
+        if x is not None and x == x:
+            limpia.append(x)
+    return limpia
+
+def nnulos(df):
+    resultados = {}
+    for col in df:
+        contador = 0
+        for valor in df[col]:
+            if valor is None or (isinstance(valor, float) and valor != valor) or valor == "":
+                contador += 1
+        resultados[col] = contador
+    return resultados
+
+def duplicados(lista):
+    conteo = {}
+    n_dup = 0
+    for x in lista:
+        if x in conteo:
+            conteo[x] += 1
+        else:
+            conteo[x] = 1
+    for valor in conteo:
+        if conteo[valor] > 1:
+            n_dup += conteo[valor] - 1
+    return n_dup
+
+# ── Funciones auxiliares derivadas ────────────────────
+def desv_std(lista):
+    return varianza(lista) ** 0.5
+
+def rango(lista):
+    return maximo(lista) - minimo(lista)
+
+def iqr(lista):
+    return cuartil(lista, 0.75) - cuartil(lista, 0.25)
+
+def n_nulos_col(df, col):
+    """Cuenta nulos de una sola columna usando nnulos."""
+    return nnulos(df[[col]])[col]
+
+def n_no_nulos_col(df, col):
+    return len(df) - n_nulos_col(df, col)
+
+def pct_nulos_col(df, col):
+    n = len(df)
+    return round(n_nulos_col(df, col) / n * 100, 2) if n else 0
+
+def n_unicos(lista):
+    vistos = {}
+    for x in lista:
+        vistos[x] = 1
+    return len(vistos)
+
+def contar_outliers_col(lista):
+    """Cuenta outliers por IQR en una lista limpia."""
+    l = dropnulos(lista)
+    if len(l) == 0:
+        return 0
+    q1 = cuartil(l, 0.25)
+    q3 = cuartil(l, 0.75)
+    iq = q3 - q1
+    lim_inf = q1 - 1.5 * iq
+    lim_sup = q3 + 1.5 * iq
+    count = 0
+    for x in l:
+        if x < lim_inf or x > lim_sup:
+            count += 1
+    return count
+
+def completitud_total(df):
+    """% de celdas no nulas en todo el df."""
+    total_celdas = len(df) * len(df.columns)
+    nulos_dict = nnulos(df)
+    total_nulos = 0
+    for v in nulos_dict.values():
+        total_nulos += v
+    return round((total_celdas - total_nulos) / total_celdas * 100, 1) if total_celdas else 0
+
+def correlacion(lista_x, lista_y):
+    """Pearson entre dos listas sin NaN."""
+    n = len(lista_x)
+    if n == 0:
+        return 0
+    mx = media(lista_x)
+    my = media(lista_y)
+    num = 0
+    den_x = 0
+    den_y = 0
+    for x, y in zip(lista_x, lista_y):
+        dx = x - mx
+        dy = y - my
+        num  += dx * dy
+        den_x += dx ** 2
+        den_y += dy ** 2
+    if den_x == 0 or den_y == 0:
+        return 0
+    return num / ((den_x * den_y) ** 0.5)
+
+def matriz_correlacion(df, cols_num):
+    """
+    Calcula la matriz de correlación de Pearson usando
+    la función correlacion() propia para cada par de columnas.
+    Retorna un dict de dicts: {col_i: {col_j: r}}.
+    """
+    # Pares de listas limpias por columna
+    listas = {}
+    for col in cols_num:
+        listas[col] = dropnulos(list(df[col]))
+
+    matriz = {}
+    for ci in cols_num:
+        matriz[ci] = {}
+        for cj in cols_num:
+            # Alinear pares válidos (ambos no nulos)
+            pares_i = []
+            pares_j = []
+            for xi, xj in zip(df[ci], df[cj]):
+                if (xi is not None and xi == xi and
+                    xj is not None and xj == xj):
+                    pares_i.append(xi)
+                    pares_j.append(xj)
+            matriz[ci][cj] = round(correlacion(pares_i, pares_j), 4)
+    return matriz
+
+# ══════════════════════════════════════════════════════
+#  CARGA Y LIMPIEZA DEL DATASET (sin pandas.fillna/astype batch)
+# ══════════════════════════════════════════════════════
+
+archivo = "Evaluaciones_Agropecuarias_Municipales_EVA_20260414.csv"
+df = pd.read_csv(archivo, sep=',')
+df.columns = [c.replace("\n", " ").strip() for c in df.columns]
+
+# Limpieza de columnas numéricas con comas (operación de parsing, no estadística)
+columnas_num_limpiar = ["Área Sembrada (ha)", "Área Cosechada (ha)", "Producción (t)"]
+for col in columnas_num_limpiar:
+    df[col] = pd.to_numeric(
+        df[col].astype(str).str.replace(',', '').str.strip(),
+        errors='coerce'
+    ).fillna(0).astype('int64')
+
+df['CÓD.  DEP.'] = pd.to_numeric(df['CÓD.  DEP.'], errors='coerce').fillna(0).astype(int).astype(str)
+
+# Columnas numéricas y categóricas (referencia global)
+COLS_NUM = list(df.select_dtypes(include=['number']).columns)
+COLS_CAT = list(df.select_dtypes(exclude=['number']).columns)
+
+# ══════════════════════════════════════════════════════
+#  FUNCIÓN MAESTRA: funciones_dashboard
+#  Toda la lógica de cálculo usa las funciones propias.
+# ══════════════════════════════════════════════════════
+
+def funciones_dashboard(funcion, df):
+
+    cols_num = COLS_NUM
+    cols_cat = COLS_CAT
+
+    # ── tarjetas ──────────────────────────────────────────────────────────────
+    if funcion == "tarjetas":
+        comp = completitud_total(df)
+
+        # outliers totales con función propia
+        total_outliers = 0
+        for col in cols_num:
+            total_outliers += contar_outliers_col(list(df[col]))
+
+        items = [
+            ("Registros",   f"{len(df):,}",          "#00E5FF"),
+            ("Variables",   f"{len(df.columns)}",    "#00E676"),
+            ("Completitud", f"{comp}%",               "#1DE9B6"),
+            ("Numéricas",   f"{len(cols_num)}",      "#2979FF"),
+            ("Categóricas", f"{len(cols_cat)}",      "#7C4DFF"),
+            ("Outliers",    f"{total_outliers:,}",   "#18FFFF"),
+        ]
+
+        html_str = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">'
+        for titulo, valor, color in items:
+            html_str += (
+                f'<div style="background:rgba(15,23,42,0.82);border:1px solid rgba(148,163,184,0.18);'
+                f'border-top:5px solid {color};border-radius:16px;padding:16px 14px;'
+                f'box-shadow:0 10px 24px rgba(0,0,0,0.22);backdrop-filter:blur(4px);">'
+                f'<div style="font-size:0.86rem;font-weight:700;color:#8be9fd;text-transform:uppercase;letter-spacing:.04em;">{titulo}</div>'
+                f'<div style="font-size:1.95rem;line-height:1.1;font-weight:800;color:#f8fafc;margin-top:8px;">{valor}</div>'
+                f'</div>'
+            )
+        html_str += '</div>'
+        return HTML(html_str)
+
+    # ── variables ─────────────────────────────────────────────────────────────
+    elif funcion == "variables":
+        filas = ""
+        nulos_dict = nnulos(df)
+
+        for i, col in enumerate(df.columns):
+            dtype = df[col].dtype
+            if dtype == 'object' or dtype.name == 'category':
+                tipo_dato = "Nominal"
+            elif 'int' in dtype.name:
+                tipo_dato = "Discreto"
+            elif 'float' in dtype.name:
+                tipo_dato = "Continuo"
+            else:
+                tipo_dato = "Desconocido"
+
+            n_nul  = nulos_dict[col]
+            n_noNul = len(df) - n_nul
+            pct    = round(n_nul / len(df) * 100, 2) if len(df) else 0
+            lista_col = dropnulos(list(df[col]))
+            n_uni  = n_unicos(lista_col)
+            bg     = "#111827" if i % 2 == 0 else "#0f172a"
+            color_pct = "#ff5555" if pct > 10 else ("#ffb86c" if pct > 0 else "#50fa7b")
+
+            filas += (
+                f'<tr style="background:{bg};">'
+                f'<td style="padding:8px 14px;color:#e2e8f0;">{col}</td>'
+                f'<td style="padding:8px 14px;color:#8be9fd;">{dtype}</td>'
+                f'<td style="padding:8px 14px;text-align:right;color:#e2e8f0;">{n_noNul:,}</td>'
+                f'<td style="padding:8px 14px;text-align:right;color:#e2e8f0;">{n_nul:,}</td>'
+                f'<td style="padding:8px 14px;text-align:center;font-weight:700;color:{color_pct};">{pct} %</td>'
+                f'<td style="padding:8px 14px;text-align:center;color:#bd93f9;font-weight:bold;">{tipo_dato}</td>'
+                f'</tr>'
+            )
+
+        tabla_html = (
+            '<div class="tabla-scroll" style="overflow-y:auto;max-height:420px;border-radius:12px;'
+            'box-shadow:0 10px 28px rgba(0,0,0,0.24);border:1px solid #243244;background:#0f172a;">'
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;color:#e2e8f0;">'
+            '<thead style="position:sticky;top:0;z-index:1;">'
+            '<tr style="background:#0b57d0;color:white;">'
+            '<th style="padding:10px 14px;text-align:left;">Variable</th>'
+            '<th style="padding:10px 14px;text-align:left;">Dtype</th>'
+            '<th style="padding:10px 14px;text-align:right;">No nulos</th>'
+            '<th style="padding:10px 14px;text-align:right;">Nulos</th>'
+            '<th style="padding:10px 14px;text-align:center;">% Nulos</th>'
+            '<th style="padding:10px 14px;text-align:center;">Tipo de Dato</th>'
+            '</tr></thead>'
+            f'<tbody>{filas}</tbody>'
+            '</table></div>'
+        )
+        return HTML(tabla_html)
+
+    # ── mejoras ───────────────────────────────────────────────────────────────
+    elif funcion == "mejoras":
+        mejoras_lista = [
+            {"titulo":"1. Normalización de Nombres",   "desc":"Columnas con saltos de línea (\\n) como 'Área Sembrada\\n(ha)'.", "accion":"Normalizar a snake_case (area_sembrada_ha).", "icon":"📝","color":"#8be9fd"},
+            {"titulo":"2. Formato de Miles en Números","desc":"AÑO y Producción tienen '2,006' o '1,440' como texto.",           "accion":"Eliminar comas y convertir a int/float.",            "icon":"🔢","color":"#50fa7b"},
+            {"titulo":"3. Códigos Geográficos (DANE)", "desc":"CÓD. MUN. con formato '25,754' impide joins oficiales.",           "accion":"Limpiar separadores para compatibilidad DIVIPOLA.",  "icon":"","color":"#ffb86c"},
+            {"titulo":"4. Inconsistencia Agronómica",  "desc":"13,634 filas donde Área Cosechada > Área Sembrada.",              "accion":"Crear flag de calidad y revisar registros.",          "icon":"⚠️","color":"#ff5555"},
+            {"titulo":"5. Gestión de Nulos Clave",     "desc":"Rendimiento (t/ha) tiene 3,433 nulos críticos.",                  "accion":"Documentar origen o imputar por grupo de cultivo.",  "icon":"","color":"#bd93f9"},
+            {"titulo":"6. Dualidad de Periodos",        "desc":"Mezcla de formatos anuales (2007) y semestrales (2007A).",        "accion":"Separar en columnas 'año' y 'semestre'.",            "icon":"","color":"#f1fa8c"},
+        ]
+
+        tarjetas_html = ""
+        for m in mejoras_lista:
+            tarjetas_html += (
+                f'<div style="background:rgba(30,41,59,0.5);border-left:4px solid {m["color"]};'
+                f'border-radius:8px;padding:15px;margin-bottom:10px;">'
+                f'<div style="display:flex;align-items:center;margin-bottom:8px;">'
+                f'<span style="font-size:1.5rem;margin-right:10px;">{m["icon"]}</span>'
+                f'<strong style="color:{m["color"]};font-size:1.1rem;">{m["titulo"]}</strong>'
+                f'</div>'
+                f'<p style="margin:0;font-size:0.9rem;color:#e2e8f0;"><strong>Hallazgo:</strong> {m["desc"]}</p>'
+                f'<p style="margin:5px 0 0 0;font-size:0.85rem;color:#94a3b8;font-style:italic;">🚀 Mejorar a: {m["accion"]}</p>'
+                f'</div>'
+            )
+
+        return HTML(
+            '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px;padding:10px;">'
+            f'{tarjetas_html}</div>'
+        )
+
+    # ── numericas (min/max) ───────────────────────────────────────────────────
+    elif funcion == "numericas":
+        filas = ""
+        for i, col in enumerate(cols_num):
+            lista = dropnulos(list(df[col]))
+            mn = minimo(lista)
+            mx = maximo(lista)
+            bg = "#111827" if i % 2 == 0 else "#0f172a"
+            filas += (
+                f'<tr style="background:{bg};">'
+                f'<td style="padding:10px;color:#8be9fd;font-weight:bold;">{col}</td>'
+                f'<td style="padding:10px;text-align:right;color:#50fa7b;">{mn:,.2f}</td>'
+                f'<td style="padding:10px;text-align:right;color:#ff5555;">{mx:,.2f}</td>'
+                f'</tr>'
+            )
+
+        return HTML(
+            '<div style="border-radius:12px;border:1px solid #2979FF;overflow:hidden;background:#0f172a;">'
+            '<table style="width:100%;border-collapse:collapse;font-size:14px;">'
+            '<thead><tr style="background:#2979FF;color:white;">'
+            '<th style="padding:12px;text-align:left;">Variable Numérica</th>'
+            '<th style="padding:12px;text-align:right;">Valor Mínimo</th>'
+            '<th style="padding:12px;text-align:right;">Valor Máximo</th>'
+            f'</tr></thead><tbody>{filas}</tbody>'
+            '</table></div>'
+        )
+
+    # ── categoricas (únicos) ──────────────────────────────────────────────────
+    elif funcion == "categoricas":
+        filas = ""
+        for i, col in enumerate(cols_cat):
+            lista = dropnulos(list(df[col]))
+            n_uni = n_unicos(lista)
+            bg = "#111827" if i % 2 == 0 else "#0f172a"
+            filas += (
+                f'<tr style="background:{bg};">'
+                f'<td style="padding:10px;color:#ff79c6;font-weight:bold;">{col}</td>'
+                f'<td style="padding:10px;text-align:center;">'
+                f'<span style="background:#7C4DFF;padding:2px 12px;border-radius:10px;color:white;">{n_uni}</span>'
+                f'</td></tr>'
+            )
+
+        return HTML(
+            '<div style="border-radius:12px;border:1px solid #7C4DFF;overflow:hidden;background:#0f172a;">'
+            '<table style="width:100%;border-collapse:collapse;font-size:14px;">'
+            '<thead><tr style="background:#7C4DFF;color:white;">'
+            '<th style="padding:12px;text-align:left;">Variable Categórica</th>'
+            '<th style="padding:12px;text-align:center;">Cant. Valores Únicos</th>'
+            f'</tr></thead><tbody>{filas}</tbody>'
+            '</table></div>'
+        )
+
+    # ── medidas estadísticas ──────────────────────────────────────────────────
+    elif funcion == "medidas":
+        filas = ""
+        for i, col in enumerate(cols_num):
+            lista = dropnulos(list(df[col]))
+            if len(lista) == 0:
+                continue
+            var  = varianza(lista)
+            std  = desv_std(lista)
+            mu   = media(lista)
+            me   = mediana(lista)
+            q1   = cuartil(lista, 0.25)
+            q3   = cuartil(lista, 0.75)
+            asm  = asimetria(lista)
+            cur  = curtosis(lista)
+            bg   = "#111827" if i % 2 == 0 else "#0f172a"
+            filas += (
+                f'<tr style="background:{bg};border-bottom:1px solid #1e293b;">'
+                f'<td style="padding:10px 14px;color:#e2e8f0;font-weight:500;">{col}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#8be9fd;">{mu:,.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#e2e8f0;">{me:,.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#e2e8f0;">{std:,.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#e2e8f0;">{var:,.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#e2e8f0;">{q1:,.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#e2e8f0;">{q3:,.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#bd93f9;font-weight:bold;">{asm:.2f}</td>'
+                f'<td style="padding:10px 14px;text-align:right;color:#bd93f9;font-weight:bold;">{cur:.2f}</td>'
+                f'</tr>'
+            )
+
+        tabla_html = (
+            '<div style="overflow-x:auto;border-radius:12px;border:1px solid #243244;'
+            'background:#0f172a;box-shadow:0 10px 28px rgba(0,0,0,0.24);">'
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;color:#e2e8f0;">'
+            '<thead style="position:sticky;top:0;z-index:1;">'
+            '<tr style="background:#0b57d0;color:white;">'
+            '<th style="padding:12px 14px;text-align:left;">Variable</th>'
+            '<th style="padding:12px 14px;text-align:right;">Media</th>'
+            '<th style="padding:12px 14px;text-align:right;">Mediana</th>'
+            '<th style="padding:12px 14px;text-align:right;">Std</th>'
+            '<th style="padding:12px 14px;text-align:right;">Varianza</th>'
+            '<th style="padding:12px 14px;text-align:right;">Q1</th>'
+            '<th style="padding:12px 14px;text-align:right;">Q3</th>'
+            '<th style="padding:12px 14px;text-align:right;">Asimetría</th>'
+            '<th style="padding:12px 14px;text-align:right;">Curtosis</th>'
+            f'</tr></thead><tbody>{filas}</tbody>'
+            '</table></div>'
+        )
+        return HTML(tabla_html)
+
+    # ── boxplot ───────────────────────────────────────────────────────────────
+    elif funcion == "boxplot":
+        cols_plot = cols_num[:4]
+        fig = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=[f"{col}" for col in cols_plot],
+            vertical_spacing=0.12, horizontal_spacing=0.1
+        )
+        for idx, col in enumerate(cols_plot):
+            r = (idx // 2) + 1
+            c = (idx % 2) + 1
+            lista = dropnulos(list(df[col]))
+            fig.add_trace(
+                go.Box(y=lista, name=col, marker_color='#00E5FF',
+                       boxpoints='outliers', line=dict(width=1)),
+                row=r, col=c
+            )
+            fig.update_yaxes(type="log", row=r, col=c)
+
+        fig.update_layout(
+            height=750,
+            title_text="Análisis de Dispersión (Escala Logarítmica)",
+            template="plotly_dark", showlegend=False,
+            margin=dict(l=40, r=20, t=80, b=40)
+        )
+        fig.show()
+
+    # ── histograma ────────────────────────────────────────────────────────────
+    elif funcion == "histograma":
+        cols_plot = cols_num[:4]
+        fig = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=[f"Distribución (95% datos): {col}" for col in cols_plot],
+            vertical_spacing=0.15, horizontal_spacing=0.1
+        )
+        for idx, col in enumerate(cols_plot):
+            r = (idx // 2) + 1
+            c = (idx % 2) + 1
+            lista = dropnulos(list(df[col]))
+            # límite superior percentil 95 con función propia
+            lim_sup = cuartil(sorted(lista), 0.95)
+            datos_filtrados = [x for x in lista if x <= lim_sup]
+            fig.add_trace(
+                go.Histogram(x=datos_filtrados, nbinsx=15, name=col,
+                             marker_color='#2979FF',
+                             marker_line=dict(color='white', width=0.5)),
+                row=r, col=c
+            )
+
+        fig.update_layout(
+            height=700,
+            title_text="Análisis de Distribución Representativa (Sin Outliers Extremos)",
+            template="plotly_dark", showlegend=False, bargap=0.05
+        )
+        fig.show()
+
+    # ── moda categóricas ──────────────────────────────────────────────────────
+    elif funcion == "moda":
+        filas = ""
+        for i, col in enumerate(cols_cat):
+            lista = dropnulos(list(df[col]))
+            moda_val = moda(lista) if lista else "N/A"
+            bg = "#111827" if i % 2 == 0 else "#0f172a"
+            filas += (
+                f'<tr style="background:{bg};">'
+                f'<td style="padding:10px 14px;color:#ff79c6;font-weight:500;">{col}</td>'
+                f'<td style="padding:10px 14px;color:#f1fa8c;">{moda_val}</td>'
+                f'</tr>'
+            )
+
+        return HTML(
+            '<div style="overflow-x:auto;border-radius:12px;border:1px solid #243244;background:#0f172a;">'
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;color:#e2e8f0;">'
+            '<thead><tr style="background:#0b57d0;color:white;">'
+            '<th style="padding:12px 14px;text-align:left;">Variable Categórica</th>'
+            '<th style="padding:12px 14px;text-align:left;">Moda</th>'
+            f'</tr></thead><tbody>{filas}</tbody></table></div>'
+        )
+
+    # ── frecuencias categóricas ───────────────────────────────────────────────
+    elif funcion == "frecuencias":
+        for col in cols_cat:
+            # conteo manual sin value_counts
+            conteo = {}
+            for v in dropnulos(list(df[col])):
+                conteo[v] = conteo.get(v, 0) + 1
+            top10 = sorted(conteo.items(), key=lambda x: x[1], reverse=True)[:10]
+            cats  = [t[0] for t in top10]
+            freqs = [t[1] for t in top10]
+
+            fig = px.bar(
+                x=cats, y=freqs,
+                labels={"x": col, "y": "Cantidad"},
+                title=f"Frecuencias: {col}",
+                template="plotly_dark",
+                color_discrete_sequence=['#7C4DFF']
+            )
+            fig.show()
+
+    # ── correlaciones (nueva pestaña) ─────────────────────────────────────────
+    elif funcion == "correlaciones":
+        cols_plot = cols_num[:4]   # las 4 numéricas principales
+
+        # 1. Gráficos de dispersión (scatter 2×3 para los pares más relevantes)
+        pares = [(cols_plot[i], cols_plot[j])
+                 for i in range(len(cols_plot))
+                 for j in range(i + 1, len(cols_plot))]
+
+        fig_scatter = make_subplots(
+            rows=2, cols=3,
+            subplot_titles=[f"{a} vs {b}" for a, b in pares],
+            vertical_spacing=0.14, horizontal_spacing=0.08
+        )
+
+        for idx, (ca, cb) in enumerate(pares):
+            r = (idx // 3) + 1
+            c = (idx % 3) + 1
+            # pares válidos sin NaN
+            xs, ys = [], []
+            for xa, xb in zip(df[ca], df[cb]):
+                if (xa is not None and xa == xa and
+                        xb is not None and xb == xb):
+                    xs.append(xa)
+                    ys.append(xb)
+
+            # muestra aleatoria simple para no sobrecargar el gráfico
+            paso = max(1, len(xs) // 3000)
+            xs_m = xs[::paso]
+            ys_m = ys[::paso]
+
+            r_val = round(correlacion(xs, ys), 4)
+
+            fig_scatter.add_trace(
+                go.Scatter(
+                    x=xs_m, y=ys_m,
+                    mode='markers',
+                    marker=dict(color='#00E5FF', size=3, opacity=0.35),
+                    name=f"r={r_val}"
+                ),
+                row=r, col=c
+            )
+            # línea de tendencia manual (regresión simple)
+            if len(xs) > 1:
+                mx_ = media(xs)
+                my_ = media(ys)
+                num_ = sum((xi - mx_) * (yi - my_) for xi, yi in zip(xs, ys))
+                den_ = sum((xi - mx_) ** 2 for xi in xs)
+                if den_ != 0:
+                    slope = num_ / den_
+                    intercept = my_ - slope * mx_
+                    x_line = [minimo(xs), maximo(xs)]
+                    y_line = [slope * x + intercept for x in x_line]
+                    fig_scatter.add_trace(
+                        go.Scatter(x=x_line, y=y_line, mode='lines',
+                                   line=dict(color='#FF5555', width=2, dash='dash'),
+                                   name=f"tendencia"),
+                        row=r, col=c
+                    )
+
+            # anotación del coeficiente r
+            fig_scatter.add_annotation(
+                text=f"r = {r_val}",
+                xref=f"x{idx+1}", yref=f"y{idx+1}",
+                x=0.95, y=0.95, xanchor='right', yanchor='top',
+                showarrow=False,
+                font=dict(color="#f1fa8c", size=11),
+                bgcolor="rgba(0,0,0,0.4)",
+                bordercolor="#334155",
+                borderwidth=1,
+                row=r, col=c
+            )
+
+        fig_scatter.update_layout(
+            height=700,
+            title_text="Gráficos de Dispersión con Línea de Tendencia",
+            template="plotly_dark",
+            showlegend=False,
+            margin=dict(l=40, r=20, t=80, b=40)
+        )
+        fig_scatter.show()
+
+        # 2. Matriz de correlación (heatmap)
+        mat = matriz_correlacion(df, cols_plot)
+
+        # Construir listas z, x, y para el heatmap
+        z_vals = [[mat[ci][cj] for cj in cols_plot] for ci in cols_plot]
+
+        # Etiquetas cortas
+        etiquetas = [c[:18] + "…" if len(c) > 18 else c for c in cols_plot]
+
+        fig_heat = go.Figure(go.Heatmap(
+            z=z_vals,
+            x=etiquetas,
+            y=etiquetas,
+            colorscale=[
+                [0.0,  "#1a0533"],
+                [0.25, "#7C4DFF"],
+                [0.5,  "#0b1020"],
+                [0.75, "#00E5FF"],
+                [1.0,  "#00E676"],
+            ],
+            zmin=-1, zmax=1,
+            text=[[f"{v:.2f}" for v in row] for row in z_vals],
+            texttemplate="%{text}",
+            textfont=dict(size=13, color="white"),
+            hovertemplate="<b>%{y}</b> × <b>%{x}</b><br>r = %{z:.4f}<extra></extra>",
+        ))
+
+        fig_heat.update_layout(
+            title_text="Matriz de Correlación de Pearson",
+            template="plotly_dark",
+            height=500,
+            margin=dict(l=20, r=20, t=60, b=20),
+            xaxis=dict(tickangle=-30),
+        )
+        fig_heat.show()
+
+        # 3. Tabla resumen de correlaciones
+        filas_tab = ""
+        idx_fila = 0
+        for ci in cols_plot:
+            for cj in cols_plot:
+                if ci >= cj:
+                    continue
+                r_val = mat[ci][cj]
+                if abs(r_val) >= 0.7:
+                    intensidad = "Fuerte"
+                    color_int  = "#00E676"
+                elif abs(r_val) >= 0.4:
+                    intensidad = "Moderada"
+                    color_int  = "#ffb86c"
+                else:
+                    intensidad = "Débil"
+                    color_int  = "#ff5555"
+
+                direccion = "Positiva" if r_val >= 0 else "Negativa"
+                bg = "#111827" if idx_fila % 2 == 0 else "#0f172a"
+                filas_tab += (
+                    f'<tr style="background:{bg};">'
+                    f'<td style="padding:9px 14px;color:#8be9fd;">{ci}</td>'
+                    f'<td style="padding:9px 14px;color:#8be9fd;">{cj}</td>'
+                    f'<td style="padding:9px 14px;text-align:center;font-weight:700;color:#f1fa8c;">{r_val:.4f}</td>'
+                    f'<td style="padding:9px 14px;text-align:center;color:{color_int};font-weight:700;">{intensidad}</td>'
+                    f'<td style="padding:9px 14px;text-align:center;color:#e2e8f0;">{direccion}</td>'
+                    f'</tr>'
+                )
+                idx_fila += 1
+
+        return HTML(
+            '<div style="overflow-x:auto;border-radius:12px;border:1px solid #243244;'
+            'background:#0f172a;margin-top:10px;">'
+            '<table style="width:100%;border-collapse:collapse;font-size:13px;color:#e2e8f0;">'
+            '<thead><tr style="background:#0b57d0;color:white;">'
+            '<th style="padding:12px 14px;text-align:left;">Variable A</th>'
+            '<th style="padding:12px 14px;text-align:left;">Variable B</th>'
+            '<th style="padding:12px 14px;text-align:center;">r (Pearson)</th>'
+            '<th style="padding:12px 14px;text-align:center;">Intensidad</th>'
+            '<th style="padding:12px 14px;text-align:center;">Dirección</th>'
+            f'</tr></thead><tbody>{filas_tab}</tbody></table></div>'
+        )
+```
+
+# Portada
+
+```{python}
+integrantes = [
+    ("Santiago Andres Cardona Rendon", "T00077913"),
+    ("Luis Antonio Tamara Velasquez",  "T00098776"),
+    ("Juan David Colon Martinez",      "T00061359"),
+    ("Juan Jose Martinez Parra",       "T00071104"),
+    ("Alan Tapias Melgarejo",          "T00078528"),
+]
+
+filas = ""
+for i, (nombre, codigo) in enumerate(integrantes):
+    bg = "#0f172a" if i % 2 == 0 else "#111827"
+    filas += (
+        f'<tr style="background:{bg};">'
+        f'<td style="padding:11px 18px;font-size:13.5px;color:#e2e8f0;">{nombre}</td>'
+        f'<td style="padding:11px 18px;text-align:center;color:#8be9fd;font-weight:700;">{codigo}</td>'
+        f'</tr>'
+    )
+
+logo_html = '<div style="height:100px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;"><b style="color:#8be9fd;font-size:34px;">UTB</b></div>'
+
+meses = {1:"enero",2:"febrero",3:"marzo",4:"abril",5:"mayo",6:"junio",
+         7:"julio",8:"agosto",9:"septiembre",10:"octubre",11:"noviembre",12:"diciembre"}
+hoy = datetime.now()
+fecha_hoy = f"{hoy.day} de {meses[hoy.month]} de {hoy.year}"
+
+HTML(
+    f'<div style="min-height:85vh;display:flex;align-items:center;justify-content:center;'
+    f'background:#09111f;border-radius:14px;padding:30px 20px;">'
+    f'<div style="max-width:740px;width:100%;text-align:center;">'
+    f'{logo_html}'
+    f'<div style="font-size:1.35rem;font-weight:700;color:#e2e8f0;margin-bottom:4px;">Programacion para Ciencia de Datos</div>'
+    f'<div style="font-size:0.92rem;color:#8be9fd;font-weight:600;margin-bottom:20px;">NRC: 2479</div>'
+    f'<div style="background:#00E5FF;color:#08111f;border-radius:8px;padding:12px 24px;display:inline-block;font-size:1.05rem;font-weight:800;margin-bottom:26px;">Análisis Integral de Resultados Académicos</div>'
+    f'<div style="background:#111827;border:1px solid #263244;border-radius:12px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,0.28);">'
+    f'<div style="background:#0b57d0;color:white;padding:11px 18px;font-weight:700;">Integrantes del Grupo</div>'
+    f'<table style="width:100%;border-collapse:collapse;">'
+    f'<thead><tr style="background:#0f172a;">'
+    f'<th style="padding:9px 18px;font-size:11px;color:#94a3b8;font-weight:700;">Nombre</th>'
+    f'<th style="padding:9px 18px;font-size:11px;color:#94a3b8;font-weight:700;text-align:center;">Codigo</th>'
+    f'</tr></thead>'
+    f'<tbody>{filas}</tbody>'
+    f'</table>'
+    f'</div>'
+    f'<div style="margin-top:20px;font-size:0.9rem;color:#cbd5e1;">'
+    f'<span style="background:#0f172a;border-radius:20px;padding:6px 20px;border:1px solid #334155;">'
+    f'{fecha_hoy} — Cartagena, Colombia</span></div>'
+    f'</div></div>'
+)
+```
+
+# Descripcion
+
+## Row {height="auto"}
+
+```{python}
+funciones_dashboard("tarjetas", df)
+```
+
+## Row {height="auto"}
+
+### Column {width="100%" .tabset}
+
+#### 1. Informacion del Dataset
+
+```{python}
+funciones_dashboard("variables", df)
+```
+
+#### 2. Oportunidades de Mejora
+
+```{python}
+funciones_dashboard("mejoras", df)
+```
+
+#### 3. Variables numericas
+
+```{python}
+funciones_dashboard("numericas", df)
+```
+
+#### 4. Variables categoricas
+
+```{python}
+funciones_dashboard("categoricas", df)
+```
+
+# Variables numericas
+
+## Row {height="auto"}
+
+### Column {width="100%" .tabset}
+
+#### 1. Medidas
+
+```{python}
+funciones_dashboard("medidas", df)
+```
+
+#### 2. Histogramas
+
+```{python}
+funciones_dashboard("histograma", df)
+```
+
+#### 3. Boxplots
+
+```{python}
+funciones_dashboard("boxplot", df)
+```
+
+#### 4. Correlaciones
+
+```{python}
+funciones_dashboard("correlaciones", df)
+```
+
+# Variables categoricas
+
+## Row {height="auto"}
+
+### Column {width="100%" .tabset}
+
+#### 1. Moda
+
+```{python}
+funciones_dashboard("moda", df)
+```
+
+#### 2. Tabla de frecuencias
+
+```{python}
+funciones_dashboard("frecuencias", df)
+```
+
+# Referencias
+```{python}
+C_AZUL1 = "#0d47a1"
+C_AZUL2 = "#1565c0"
+C_AZUL3 = "#1976d2"
+C_AZUL4 = "#68b4f1"
+C_AZUL5 = "#5db0eb"
+C_GRIS  = "#757575"
+
+refs = [
+    ("Fuente",     "Evaluaciones Agropecuarias Municipales (EVA)", "Min.Agricultura",         "2026", "Portal Datos Abiertos", "https://www.datos.gov.co/Agricultura-y-Desarrollo-Rural/RELACION-DEL-GRUPO-DE-CULTIVO-CON-EL-CICLO-DE-PROD/ezbz-3vbz", "Dataset oficial con area, produccion, rendimiento por cultivo"),
+    ("Libro",      "Estadistica para Administracion (10 ed.)",     "Anderson, Sweeney, Williams","2012","Cengage Learning",    "", "Medidas tendencia central, dispersion y posicion"),
+    ("Libro",      "Mathematical Statistics (7 ed.)",              "Wackerly, Mendenhall, Scheaffer","2010","Cengage Learning","", "IQR, coef.variacion, asimetria y curtosis"),
+    ("Libro",      "Probabilidad y Estadistica (9 ed.)",           "Walpole et al.",           "2012", "Pearson",             "", "Varianza, std y tablas frecuencias"),
+    ("Libreria",   "pandas",                                       "Pandas Dev Team",           "2024", "pandas.pydata.org",  "https://pandas.pydata.org/docs/", "Carga, limpieza y calculo estadistico"),
+    ("Libreria",   "Plotly",                                       "Plotly Inc.",               "2024", "plotly.com/python",  "https://plotly.com/python/", "Graficos interactivos: histogramas, barras"),
+    ("Herramienta","Quarto",                                       "Posit PBC",                 "2024", "quarto.org",         "https://quarto.org", "Dashboard reproducible HTML con Python"),
+]
+
+tc_color = {"Fuente": C_AZUL1, "Libro": C_AZUL2, "Libreria": "#1565c0", "Herramienta": C_AZUL3}
+
+items = ""
+for i, (tipo, titulo, autor, ano, fuente, url_ref, desc) in enumerate(refs):
+    bg = C_AZUL5 if i % 2 else "white"
+    bloque_url = ""
+    if url_ref:
+        bloque_url = f"<div style='margin-top:3px;'><a href='{url_ref}' target='_blank' style='color:{C_AZUL2};font-size:10px;font-weight:600;'>{url_ref[:40]}...</a></div>"
+    items += f"""
+    <div style='padding:14px 18px;background:{bg};border-bottom:1px solid {C_AZUL4};'>
+        <div style='display:flex;gap:8px;margin-bottom:5px;'>
+            <span style='background:{tc_color[tipo]};color:white;border-radius:4px;padding:2px 10px;font-size:9px;font-weight:700;white-space:nowrap;'>{tipo}</span>
+            <span style='font-weight:700;color:#111;'>{titulo}</span>
+        </div>
+        <div style='font-size:11.5px;color:{C_AZUL1};font-weight:600;margin-bottom:2px;'>
+            {autor} ({ano}) — <em style='color:{C_GRIS};font-weight:400;'>{fuente}</em>
+        </div>
+        <div style='font-size:11.5px;color:#555;'>{desc}</div>
+        {bloque_url}
+    </div>
+    """
+
+HTML(f"<div style='border:1px solid {C_AZUL4};border-radius:8px;overflow:hidden;'>{items}</div>")
+```
