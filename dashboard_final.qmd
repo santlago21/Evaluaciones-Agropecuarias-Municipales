@@ -401,7 +401,7 @@ def matriz_correlacion(df, cols_num):
 #  CARGA Y LIMPIEZA DEL DATASET (sin pandas.fillna/astype batch)
 # ══════════════════════════════════════════════════════
 
-archivo = "Evaluaciones_Agropecuarias_Municipales_EVA_20260414.csv"
+archivo = "Evaluaciones_Agropecuarias_Municipales.csv"
 df = pd.read_csv(archivo, sep=',')
 df.columns = [c.replace("\n", " ").strip() for c in df.columns]
 
